@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group 'stepikTop'
+
+sourceCompatibility = 1.8
+
+task fatJar(type: Jar)  {
+    manifest {
+        attributes 'Main-Class': 'Main'
+    }
+
+    baseName = "stepikTop"
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile 'org.apache.httpcomponents:httpclient:4.5.5'
+    compile group: 'org.jboss.spec.javax.net.ssl', name: 'jboss-jsse-api_8.0_spec', version: '1.0.0.Final'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile 'org.json:json:20171018'
+}
