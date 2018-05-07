@@ -1,4 +1,3 @@
-import javafx.util.Pair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -11,9 +10,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 public class Main {
 
@@ -26,7 +22,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        if(args.length == 0 || args[0].equals("-help")) {
+        if (args.length == 0 || args[0].equals("-help")) {
             printHelp();
         }
 
@@ -38,7 +34,7 @@ public class Main {
             printHelp();
         }
 
-        if(courseQuantity < 1) {
+        if (courseQuantity < 1) {
             System.out.println("Number of courses should be more than 0");
             printHelp();
         }
@@ -46,14 +42,14 @@ public class Main {
         System.out.print("Please wait...");
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(new KeyManager[0], new TrustManager[] {new DefaultTrustManager()}, new SecureRandom());
+        sslContext.init(new KeyManager[0], new TrustManager[]{new DefaultTrustManager()}, new SecureRandom());
 
         boolean hasNext = true;
-        List<Pair<Integer, String>> courses = new ArrayList<>();
+        int processed = 0;
         try (CloseableHttpClient client = HttpClients.custom().setSSLContext(sslContext).build()) {
+            System.out.println("\rTop " + courseQuantity + " courses on Stepik: ");
             for (int page = 1; hasNext; page++) {
-
-                HttpGet query = new HttpGet("https://stepik.org:443/api/courses?page=" + page);
+                HttpGet query = new HttpGet("https://stepik.org/api/courses?exclude_ended=true&is_popular=true&is_public=true&order=-activity&page=" + page);
                 try (CloseableHttpResponse response = client.execute(query)) {
                     String answer = EntityUtils.toString(response.getEntity());
                     JSONObject obj = new JSONObject(answer);
@@ -63,31 +59,24 @@ public class Main {
                         JSONObject data = (JSONObject) item;
                         Integer learners = data.getInt("learners_count");
                         String title = data.getString("title");
-
-                        courses.add(new Pair<>(learners, title));
+                        processed++;
+                        System.out.println(processed + ". " + title + " (" + learners + " learners)");
+                        if (processed == courseQuantity) return;
                     }
                 }
             }
-        }
-
-        courses.sort((a, b) -> b.getKey().compareTo(a.getKey()));
-
-        System.out.println("\rTop " + courseQuantity + " courses on Stepik: ");
-
-        Iterator<Pair<Integer, String>> it = courses.iterator();
-        for (int position = 1; position <= courseQuantity && it.hasNext(); position++) {
-            Pair<Integer, String> course = it.next();
-            System.out.println(position + ". " + course.getValue() + " (" + course.getKey() + " learners)");
         }
     }
 
     private static class DefaultTrustManager implements X509TrustManager {
 
         @Override
-        public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {}
+        public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {
+        }
 
         @Override
-        public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {}
+        public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {
+        }
 
         @Override
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
